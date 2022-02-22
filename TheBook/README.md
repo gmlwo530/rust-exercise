@@ -402,3 +402,50 @@ fn five() -> i32 {
         println!("LIFTOFF!!!");
     }
     ```
+
+# Understanding Ownership
+
+- 가비지 콜렉터 없이 메모리 안정성을 보장을 가능하게 해주는 특징이다.
+
+## What is Ownership?
+
+- ownership은 Rust 프로그램이 메모리를 관리하는 방법을 제어하는 규칙이다.
+- 일련의 규칙이 있는 소유권 시스템이 메모리를 관리한다.
+- 컴파일러는 이 규칙들을 확인하고, 만약 위험한 규칙들이 있으면 컴파일 되지 않는다.
+
+### The stack and the heap
+
+- ownership을 설명하기 위해 stack과 heap에 대해 미리 알아야 된다.
+- 둘 다 런타임에 우리의 코드가 사용 할 수 있는 메모리의 일부인데, 다른 방식으로 구조화 되어 있다.
+- stack은 선입선출이다.
+- stack에 저장 되는 데이터들은 사이즈가 고정 되어 있어야 한다. 컴파일 타임에 데이터의 사이즈를 알 수 없는 데이터 또는 사이즈가 변할 수 있는 데이터는 heap에 저장 되어야 한다.
+- heap에 데이터를 집어 넣을 때 확실한 데이터 공간을 요청하게 된다.
+- memory allocator는 heap에서 충분한 사이즈의 비어있는 스팟을 찾고, 이 스팟을 사용한다고 표시한다. 그리고 pointer를 리턴하는데 이것은 위치의 주소다. 이 과정을 allocating on the heap 또는 allocating이라고 부른다. pointer는 고정 된 사이즈를 가지므로 stack에 저장 할 수 있다.
+- stack은 heap 처럼 새로운 데이터를 저장하기 위해 공간을 찾고 공간을 bookkeeping 할 필요가 없어서 빠르다.
+- heap은 pointer를 따라 데이터를 찾아야 하기 때문에 stack 보다 데이터에 접근하는 시간이 오래 걸린다. 대신 접근해야 할 데이터가 서로 가까이 있으면 일시적으로 빨라질 수 있다.
+- ownership의 역할은 heap에 어떤 데이터가 있고, 중복된 데이터를 최소화 하고, 사용하지 않는 데이터를 지우는데 있다.
+- onwership을 이해하면 stack과 heap을 신경 써야 할 필요가 없지만, ownership의 주요 목적이 heap을 관리하는 것이라는 내용을 알고 있으면 ownership의 동작 방식을 이해 할 때 도움이 된다.
+
+### Ownership Rules
+
+- Rust의 각 값은 owner라고 불리는 변수를 가지고 있다.
+- 한 번에 하나의 owner만 있다.
+- owner가 scope를 벗어 났을 때, 값은 삭제 된다.
+
+### The String Type
+
+- ownership의 규칙을 설명하기 위해서 이전에 배웠던 타입보다 복잡한 String type을 알아볼거다.
+- 이전에 배운 타입들은 고정 된 사이즈를 가지고 있어서 stack에 저장 될 수 있었다.
+- 하지만 head에 저장 된 데이터를 찾고 Rust가 어떻게 데이터를 지우는 알기 위해서 String 타입은 좋은 예시가 된다.
+- String과 ownership의 관계는 다른 복잡한 타입도 가지고 있다.
+- String은 아래와 같이 사용한다.
+    
+    ```groovy
+    let mut s = String::from("hello");
+    
+    s.push_str(", world!"); // push_str() appends a literal to a String
+    
+    println!("{}", s); // This will print `hello, world!`
+    ```
+    
+    String은 가변적이고 literal은 왜 불가변일까? 이것은 두 타입이 memory를 어떻게 처리하는지에 차이점이 있어서 그렇다.
