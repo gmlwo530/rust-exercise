@@ -449,3 +449,144 @@ fn five() -> i32 {
     ```
     
     String은 가변적이고 literal은 왜 불가변일까? 이것은 두 타입이 memory를 어떻게 처리하는지에 차이점이 있어서 그렇다.
+
+    ### Memory and Allocation
+
+- `String` 타입을 사용하기 위해서 heap에 특정 메모리 양을 할당한다. 이 뜻은 아래와 같다
+    - 런타임에 메모리 할당자에서 메모리를 요청해야 한다. `String::from` 호출 할 때 이 과정이 진행 된다.
+    - String 사용이 끝나면 메모리를 할당자에게 반납해야 한다.
+- 다른 언어들은 GC를 사용하거나 코드로 명시적으로 메모리를 할당하고 반납한다. 러스트는 이와 다르게 변수가 scope를 벗어 났을 때 메모리 자동으로 반환 된다.
+- 변수가 scope 범위에서 벗어나면, Rust `drop` 이라는 특별한 함수를 호출 한다. 메모리를 반환하는 코드를 넣을 수 있는 곳이다. 중괄호가 닫히는 부분에서 Rust는 이 `drop`을 자동으로 호출한다.
+
+### Ways Variables and Data Interact: Move
+
+- 아래와 같이 코딩하면 x와 y는 고정 된 값인 5라는 값을 갖고, 두 값은 stack에 들어간다.
+    
+    ```rust
+    let x = 5;
+    let y = x;
+    ```
+    
+- 그런데 위와 같은 형태로 String 타입을 다루면 위와 다르게 동작한다.
+    
+    ```rust
+    let s1 = String::from("hello");
+    let s2 = s1;
+    ```
+    
+    일단 String 타입이 어떻게 이루어져 있는지 확인해보자.
+    
+    ![Untitled](https://doc.rust-lang.org/book/img/trpl04-01.svg)
+    
+    capacity는 heap 요청하는 메모리 사이즈로 byte 단위다.
+    
+    포인터, 길이, 크기는 stack에 저장되고, 오른쪽의 string의 내용은 heap에 저장된다.
+    
+    위 코드처럼 값은 복사하면 포인터가 복사 되어 아래와 같이 s1와 s2가 가지고 있는 포인터는 heap에 저장 된 같은 데이터를 가르키게 된다.
+    
+    ![Untitled](https://doc.rust-lang.org/book/img/trpl04-02.svg)
+    
+    Rust는 heap에 있는 데이터도 복사하지 않는다.
+    
+    앞선 상황에서 rust는 변수가 scope를 벗어나면 drop 함수를 호출하고 heap에 있는 메모리를 삭제 한다고 했다. 위와 같이 두 변수가 같은 데이터를 가르키게 되면 같은 메모리에 대해 두 번의 메모리 반납 과정이 일어나게 된다. 이런 중복 된 과정은 잠재적인 보안 취약성을 유발 할 수 있는 메모리 손상을 일으킨다.
+    
+    이 상황을 만들지 않기 위해서, rust는 `let s2 = s1` 줄 이후 s1은 더 이상 유효하지 않다고 판단한다. 그렇기 때문에 아래의 코드는 동작하지 않는다.
+    
+    ```rust
+    let s1 = String::from("hello");
+    let s2 = s1;
+    
+    println!("{}, world!", s1);
+    ```
+    
+    이것은 다른 언어의 얕은 복사 개념과 유사해 보인다. 하지만 s1은 더 이상 유효하지 않으므로 이 과정을 move라고 부른다.
+    
+    이렇게 디자인 선택에서 추측 해볼 수 있는 점은, rust는 자동으로 deep copy를 하지 않는 다는 점이다. 
+    
+
+### Ways Variables and Data Interact: Clone
+
+- Deep copy를 하고 싶다면 `clone` 이라는 함수를 쓰면 된다.
+    
+    ```rust
+    let s1 = String::from("hello");
+    let s2 = s1.clone();
+    
+    println!("s1 = {}, s2 = {}", s1, s2);
+    ```
+    
+- 물론 이 연산은 비싼 연산이다
+
+### Ownership and Functions
+
+- 함수에 어떤 인자를 넣느냐에 따라 move 또는 copy 과정이 일어난다.
+    
+    ```rust
+    fn main() {
+        let s = String::from("hello");  // s comes into scope
+    
+        takes_ownership(s);             // s's value moves into the function...
+                                        // ... and so is no longer valid here
+    
+        let x = 5;                      // x comes into scope
+    
+        makes_copy(x);                  // x would move into the function,
+                                        // but i32 is Copy, so it's okay to still
+                                        // use x afterward
+    
+    } // Here, x goes out of scope, then s. But because s's value was moved, nothing
+      // special happens.
+    
+    fn takes_ownership(some_string: String) { // some_string comes into scope
+        println!("{}", some_string);
+    } // Here, some_string goes out of scope and `drop` is called. The backing
+      // memory is freed.
+    
+    fn makes_copy(some_integer: i32) { // some_integer comes into scope
+        println!("{}", some_integer);
+    } // Here, some_integer goes out of scope. Nothing special happens.
+    ```
+    
+
+### [Return Values and Scope](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#return-values-and-scope)
+
+- 함수에서 반환하는 것도 할당하는 것처럼 값이 move한다.
+    
+    인자로 넘기면 값이 이동하고, 인자로 받은 값이 반환 되면 다시 값이 함수 밖으로 이동 된다.
+    
+    ```rust
+    fn main() {
+        let s2 = String::from("hello");     // s2 comes into scope
+    
+        let s3 = takes_and_gives_back(s2);  // s2 is moved into
+                                            // takes_and_gives_back, which also
+                                            // moves its return value into s3
+    }
+    
+    // This function takes a String and returns one
+    fn takes_and_gives_back(a_string: String) -> String { // a_string comes into
+                                                          // scope
+    
+        a_string  // a_string is returned and moves out to the calling function
+    }
+    ```
+    
+- 만약 함수가 받은 값을 그대로 넘기기 위해서는 아래와 같이 번잡한 구조로 프로그래밍 해야 한다.
+    
+    ```rust
+    fn main() {
+        let s1 = String::from("hello");
+    
+        let (s2, len) = calculate_length(s1);
+    
+        println!("The length of '{}' is {}.", s2, len);
+    }
+    
+    fn calculate_length(s: String) -> (String, usize) {
+        let length = s.len(); // len() returns the length of a String
+    
+        (s, length)
+    }
+    ```
+    
+    Rust에는 이런 번잡한 구조를 해소하기 위해서 ownership 전달 없이 값을 넘길 수 있는 references라는 개념이 존재한다.
