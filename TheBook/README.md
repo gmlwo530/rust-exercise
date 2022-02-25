@@ -590,3 +590,112 @@ fn five() -> i32 {
     ```
     
     Rust에는 이런 번잡한 구조를 해소하기 위해서 ownership 전달 없이 값을 넘길 수 있는 references라는 개념이 존재한다.
+
+## [References and Borrowing](https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html)
+
+- reference는 포인터와 비슷하다. 대신, 포인터와 다르게 reference는 정확한 타입의 유효한 값을 가르킨다.
+- 아래 코드의 변수가 담고 있는 데이터와 가르키는 방향은 사진과 같다
+    
+    ```rust
+    fn main() {
+        let s1 = String::from("hello");
+    
+        let len = calculate_length(&s1);
+    
+        println!("The length of '{}' is {}.", s1, len);
+    }
+    
+    fn calculate_length(s: &String) -> usize {
+        s.len()
+    }
+    ```
+    
+    ![Untitled](https://doc.rust-lang.org/book/img/trpl04-05.svg)
+    
+    - & 문법은 s1에 대한 refer 만드는 문법이다.
+    - &String은 s 변수가 String에 대한 reference라는 표현이다.
+    - s는 ownership을 가진적이 없으므로 함수가 끝나도 ownership을 넘기다든지 하는 일이 벌어지지 않는다.
+- reference를 만드는 행위를 borrowing(빌리다)라고 한다.
+- 당연히 reference를 사용해서 값을 수정하는 것은 불가능하다.
+    
+    ```rust
+    fn change(some_string: &String) {
+        some_string.push_str(", world"); // error!
+    }
+    ```
+    
+
+### Mutable References
+
+- reference를 사용해서 값을 수정할려면, mutable reference를 이용하면 된다.
+    
+    ```rust
+    fn main() {
+        let mut s = String::from("hello");
+    
+        change(&mut s);
+    }
+    
+    fn change(some_string: &mut String) {
+        some_string.push_str(", world");
+    }
+    ```
+    
+- mutable reference를 쓰는 하나의 제약 조건은 정확한 순간에 오직 하나의 mutable reference만 정의 할 수 있다.
+    
+    ```rust
+    let mut s = String::from("hello");
+    
+    let r1 = &mut s;
+    let r2 = &mut s;
+    
+    println!("{}, {}", r1, r2); // Error!
+    ```
+    
+    - 위와 같이 borrowing한 값을 사용하기 전에 또 borrowing을 하면 컴파일 에러가 난다.
+    - 그래서 scope가 분리되어 있으면 여러 개의 mutable reference를 사용할 수 있다.
+        
+        ```rust
+        let mut s = String::from("hello");
+        
+        {
+            let r1 = &mut s;
+        } // r1 goes out of scope here, so we can make a new reference with no problems.
+        
+        let r2 = &mut s;
+        ```
+        
+- 이런 제약 조건은 data racing이 일어나지 않게 해주는 장점이 있다.
+- mutable reference와 immutable reference를 같이 사용 할 수 없다.
+- 만약 아래와 같이 코드를 작성하면 같이 사용 할 수 있다.
+    
+    ```rust
+    let mut s = String::from("hello");
+    
+    let r1 = &s; // no problem
+    let r2 = &s; // no problem
+    println!("{} and {}", r1, r2);
+    // variables r1 and r2 will not be used after this point
+    
+    let r3 = &mut s; // no problem
+    println!("{}", r3);
+    ```
+    
+    - reference가 scope가 끝날 때 까지 사용 되지 않는 것을 컴파일러가 말해준다. 이것을 [Non-lexical-lifetime(NLL)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html#non-lexical-lifetimes)이라고 한다.
+
+### Dangling References
+
+- point를 사용하는 언어에서는 dangling pointer를 만들 수 있는 위험이 있다. dangling pointer는 A 값을 가르키는 reference가 메모리에 있는데 A 값이 메모리에서 반납되는 경우를 말한다.
+- 하지만 러스트에서는 이것을 컴파일 타임 때 잡아내서 에러를 출력한다.
+    
+    ```rust
+    fn main() {
+        let reference_to_nothing = dangle();
+    }
+    
+    fn dangle() -> &String {
+        let s = String::from("hello");
+    
+        &s
+    } // 함수가 끝났으므로 변수 s는 메모리로부터 사라진다. &s는 dangling pointer가 된다.
+    ```
