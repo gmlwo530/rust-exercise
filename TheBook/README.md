@@ -699,3 +699,30 @@ fn five() -> i32 {
         &s
     } // 함수가 끝났으므로 변수 s는 메모리로부터 사라진다. &s는 dangling pointer가 된다.
     ```
+
+## [The Slice Type](https://doc.rust-lang.org/book/ch04-03-slices.html)
+
+- slice는 reference라서, ownership을 가지지 않는다.
+- string slice 아래와 같이 한다.
+    
+    ```rust
+    let s = String::from("hello world");
+    
+    let hello = &s[0..5]; // python과 똑같이 5번째 인덱스는 포함 X. &s[..5]로 쓸 수도 있다.
+    let world = &s[6..11]; // 11이 끝이면 &s[6..]와 같이 쓸 수도 있다.
+    ```
+    각 변수가 가르키는 모습은 아래와 같다
+    ![Untitled](https://doc.rust-lang.org/book/img/trpl04-06.svg)
+    
+- `&str` 는 string slice의 타입이다.
+- `&String` 과 `&str` 은 같이 쓸 수 있다. 왜냐하면, String의 reference는 String의 전체 부분을 slice 한거랑 같기 때문이다.
+- string literal(고정 문자열)은 그 자체가 `&str` 타입이다.
+- array 슬라이스도 비슷하다.
+    
+    ```rust
+    let a = [1, 2, 3, 4, 5];
+    
+    let slice = &a[1..3]; // slice는 &[i32] 타입이다.
+    
+    assert_eq!(slice, &[2, 3]);
+    ```
