@@ -726,3 +726,90 @@ fn five() -> i32 {
     
     assert_eq!(slice, &[2, 3]);
     ```
+    
+
+# [Using Structs to Structure Related Data](https://doc.rust-lang.org/book/ch05-00-structs.html#using-structs-to-structure-related-data)
+
+## [Defining and Instantiating Structs](https://doc.rust-lang.org/book/ch05-01-defining-structs.html)
+
+```rust
+struct User {
+		active: bool,
+		username: String,
+		email: String,
+		sign_in_count: u64,
+}
+
+// 초기화
+let user1 = User {
+    email: String::from("someone@example.com"),
+    username: String::from("someusername123"),
+    active: true,
+    sign_in_count: 1,
+};
+
+// 필드에 접근
+user1.email
+
+// 할당
+let mut user1 = User...
+user1.email = String::from("anotheremail@example.com");
+
+// Init shorthand
+fn build_user(email: String, username: String) -> User {
+    User {
+        email,
+        username,
+        active: true,
+        sign_in_count: 1,
+    }
+}
+```
+
+이미 초기화 된 구조체를 가지고 새로운 구조체를 만들 수도 있다.
+
+```rust
+let user2 = User {
+    email: String::from("another@example.com"),
+    ..user1
+}; // javascript 문법이랑 비슷하다.
+```
+
+이 문법을 쓸 때 주의할 점이 있다. 이 문법을 사용하는 것은 `=` 를 사용해서 할당을 하는 것과 같다. 그래서 **user1의 username의 데이터가 이동하게 되어, user1 변수는 유효하지 않게 된다.**
+
+만약 user1의 active와 sign_in_count 변수만 사용 했다면 [이 값들은 스택에 있는 값들이고 Copy 특성을 구현하기 때문에 user1 변수](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#stack-only-data-copy)는 계속 유효하다.
+
+### Tuple structs
+
+```rust
+struct Color(i32, i32, i32);
+struct Point(i32, i32, i32);
+
+fn main() {
+    let black = Color(0, 0, 0);
+    let origin = Point(0, 0, 0);
+}
+```
+
+- struct와 다르게 필드 이름이 없다.
+- black과 origin은 서로 다른 타입이다.
+- tuple structs는 tuple 같이 행동해서, destructure 도 할 수 있다.
+
+### Unit-like Structs
+
+```rust
+struct AlwaysEqual;
+
+fn main() {
+    let subject = AlwaysEqual;
+}
+```
+
+- 필드를 선언하지 않는 구조체이다.
+- 특정 유형에 대한 특성을 구현해야 하지만 유형 자체에 저장하려는 데이터가 없을 때 유용하다.
+
+### Ownership of Struct Data
+
+- 위의 예제에서 string slice type인 `&str` 이 아닌 `String`을 썼다. 이 이유는 각각의 인스턴스가 스스로의 데이터를 갖고 해당 데이터는 구조체가 유효할 때까지 유효함을 유지시키기 위한 선택이다.
+- 물론 구조체가 데이터에 대한 reference를 저장하게 할 수 있다. 대신 이럴려면 lifetimes라는 개념을 사용해야 하는데, 이 개념은 챕터 10에서 배운다.
+- Lifetimes는 구조체에 저장 된 reference가 구조체가 유효할 때까지 유효함을 보장하는 개념이다.
