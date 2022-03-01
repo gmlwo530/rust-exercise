@@ -813,3 +813,101 @@ fn main() {
 - 위의 예제에서 string slice type인 `&str` 이 아닌 `String`을 썼다. 이 이유는 각각의 인스턴스가 스스로의 데이터를 갖고 해당 데이터는 구조체가 유효할 때까지 유효함을 유지시키기 위한 선택이다.
 - 물론 구조체가 데이터에 대한 reference를 저장하게 할 수 있다. 대신 이럴려면 lifetimes라는 개념을 사용해야 하는데, 이 개념은 챕터 10에서 배운다.
 - Lifetimes는 구조체에 저장 된 reference가 구조체가 유효할 때까지 유효함을 보장하는 개념이다.
+
+## **An Example Program Using Structs**
+
+- 일반 원시 타입은 println! 매크로로 출력 할 때 `{}` 문법을 쓰면 되는데, 구조체는 복잡하기 때문에 해당 문법이 아닌 `{:?}`(또는 `{:#?}` ⇒ pretty formatter) 문법을 사용 해야한다.
+    
+    ```rust
+    #[derive(Debug)]
+    struct Rectangle {
+    }
+    
+    let rect = Rectangle {...}
+    
+    println!("rect : {:?}", rect)
+    ```
+    
+    - 구조체를 특정 기능에 사용하고 싶으면 위와 같이 `#[derive(Debug)]` 를 작성해서 명시 해줘야 한다.
+- 디버깅하기 위해 출력하는 매크로 중에 println!보다 효과적인 dbg! 매크로가 있다.
+    
+    ```rust
+    #[derive(Debug)]
+    struct Rectangle {
+        width: u32,
+        height: u32,
+    }
+    
+    fn main() {
+        let scale = 2;
+        let rect1 = Rectangle {
+            width: dbg!(30 * scale), // ownership을 반환해주기 때문에 이렇게 할당 가능
+            height: 50,
+        };
+    
+        dbg!(&rect1);
+    }
+    ```
+    
+    - dbg!는 표현식의 ownership을 가지고 간 뒤에 반환 해준다.
+    - dbg!는 파일명과 라인 번호 그리고 표현식의 결과를 반환해준다.
+        
+        ```rust
+        // [src/main.rs:10] 30 * scale = 60
+        ```
+        
+
+### Method Syntax
+
+- 메소드는 impl 키워드를 써서 정의한다.
+
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32
+}
+
+impl Rectangle {
+		// &self는 self: &Self의 축약어
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+}
+```
+
+- 위의 메소드의 인자에서 확인 할 수 있듯이, 메소드는 ownership을 가지고 오지 않고 빌리는 형태가 일반적이다.
+- ownership 자체를 가지고 오는(&self가 아닌 self를 씀) 경우는 드물며, self를 다른 형태로 변형하거나 호출 된 곳에서 원래의 인스턴스를 사용하는 것을 막고 싶을 때 아니면 해당 테크닉은 잘 사용하지 않는다.
+- C나 C++에서는 객체의 pointer로 메서드를 호출하는 분법이 있다: `object-something()`
+- 대신에, Rust는 자동 참조와 역참조(automati referencing and dereferencing)이라는 특징을 가지고 있다.
+- Rust는 정의 된 메서드의 self가 읽기용(&self)인지, 수정 가능한지(&mut self), 소비하는 것인지(self)를 읽고 자동으로 `&`, `&mut`, `*` 표현식을 붙혀준다. 그래서 아래의 코드는 서로 같다.
+    
+    ```rust
+    p1.distance(&p2);
+    (&p1).distance(&p2);
+    ```
+    
+- impl block에 정의 되면서 self를 인자로 갖지 않는 함수를 associated function이라고 한다. 보통 constructor의 역할을 하는 함수를 만들 때 사용한다.
+    
+    ```rust
+    #[derive(Debug)]
+    struct Rectangle {
+        width: u32,
+        height: u32,
+    }
+    
+    impl Rectangle {
+        fn square(size: u32) -> Rectangle {
+            Rectangle {
+                width: size,
+                height: size,
+            }
+        }
+    }
+    
+    fn main() {
+        let sq = Rectangle::square(3);
+    }
+    ```
+    
+- impl block은 여러 개 정의 할 수 있다.
