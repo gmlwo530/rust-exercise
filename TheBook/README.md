@@ -911,3 +911,81 @@ impl Rectangle {
     ```
     
 - impl block은 여러 개 정의 할 수 있다.
+
+# **[Enums and Pattern Matching](https://doc.rust-lang.org/book/ch06-00-enums.html#enums-and-pattern-matching)**
+
+## Defining an Enum
+
+- 구조체를 사용해서 커스텀 데이터 타입을 정의하는 방법
+    
+    ```rust
+    enum IpAddrKind {
+    		V4,
+    		V6,
+    }
+    
+    let four = IpAddrKind::V4;
+    let six = IpAddrKind::V6;
+    
+    fn route(ip_kind: IpAddrKind) {}
+    
+    route(IpAddrKind::V4);
+    route(IpAddrKind::V6);
+    
+    struct IpAddr {
+    		kind: IpAddrKind,
+    		address: String,
+    }
+    
+    let home = IpAddr {
+        kind: IpAddrKind::V4,
+        address: String::from("127.0.0.1"),
+    };
+    ```
+    
+- enum의 값에 데이터를 직접 넣을 수 있다.
+    
+    ```rust
+    enum IpAddr {
+        V4(String),
+        V6(String),
+    }
+    
+    let home = IpAddr::V4(String::from("127.0.0.1"));
+    
+    let loopback = IpAddr::V6(String::from("::1"));
+    ```
+    
+    - 이렇게 타입을 정의하면, V4와 V6는 IpAddr 인스턴스를 만드는 constructor 함수가 된다.
+- enum은 서로 다른 타입의 변수를 가질 수 있다.
+    
+    ```rust
+    enum IpAddr {
+    		V4(u8, u8, u8, u8),
+    		V6(String),
+    }
+    
+    let home = IpAddr::V4(127, 0, 0, 1);
+    
+    let loopback = IpAddr::V6(String::from("::1"));
+    ```
+    
+- enum은 구조체와 같이 impl 키워드를 사용해서 메서드를 정의 할 수 있다.
+    
+    ```rust
+    enum Message {
+        Quit,
+        Move { x: i32, y: i32 },
+        Write(String),
+        ChangeColor(i32, i32, i32),
+    }
+    
+    impl Message {
+    	  fn call(&self) {
+    	      // method body would be defined here
+    	  }
+    }
+    
+    let m = Message::Write(String::from("hello"));
+    m.call();
+    ```
