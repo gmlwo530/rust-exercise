@@ -989,3 +989,53 @@ impl Rectangle {
     let m = Message::Write(String::from("hello"));
     m.call();
     ```
+    
+### The [Option Enum](https://doc.rust-lang.org/std/option/enum.Option.html) and Its Advantages Over Null Values
+
+```rust
+enum Option<T> {
+    None,
+    Some(T),
+}
+```
+
+- Option은 값이 있거나 없음을 나타내는 타입이다.
+- Rust에는 null 값이 없다. 즉, 모든 유효한 value는 null아 아니라는 소리다.
+- null과 not-null을 사용하는 경우 굉장히 많은 오류를 일으킬 수 있다.
+    - null을 개발한 Tony Hoare의 2009년 프레젠테이션에 대해 언급한 내용
+    
+    > I call it my billion-dollar mistake. At that time, I was designing the first comprehensive type system for references in an object-oriented language. My goal was to ensure that all use of references should be absolutely safe, with checking performed automatically by the compiler. But I couldn’t resist the temptation to put in a null reference, simply because it was so easy to implement. This has led to innumerable errors, vulnerabilities, and system crashes, which have probably caused a billion dollars of pain and damage in the last forty years.
+    > 
+- 하지만 null을 사용하면 의미 있게 사용 할 수 있다. null 값은 현재는 유효하지 않고 존재하지 않는 값을 뜻함으로 쓸 수 있다.
+- 문제는 실제 개념이 아니라 특정 구현에 있다.
+- Rust에는 null 없는 대신 Option enum으로 값이 존재하거나 존재하지 않음을 나타낼 수 있따.
+- Option을 사용하는 방법은 아래와 같다
+    
+    ```rust
+    fn main() {
+        let some_number = Some(5); // Option<i32> 타입
+        let some_string = Some("a string"); // Option<&str> 타입
+    
+        let absent_number: Option<i32> = None;
+    }
+    ```
+    
+    - `Option::` 접두사를 붙히지 않아도 된다.
+    - <T>는 generic
+    - Some 변수를 사용해서 값이 존재함을 추론 할 수 있고, None 을 사용해서 값이 존재하지 않음을 추론 할 수 있다.
+- Option<T>가 null 보다 좋은 이유는 컴파일러가 Option<T>와 T를 다른 타입으로 인식한다는 점에 있다. 아래의 코드는 컴파일 에러를 일으킨다.
+    
+    ```rust
+    fn main() {
+        let x: i8 = 5;
+        let y: Option<i8> = Some(5);
+    
+        let sum = x + y; // 컴파일 에러 발생!!
+    }
+    ```
+    
+    - 만약 값의 타입이 i8이면 컴파일러는 항상 유효한 값을 가지게 된다. 그러므로 해당 값을 사용 할 때 별 다른 null 체크 없이 값을 사용 할 수 있다.
+    - 만약 값의 타입이 Option<i8>이면 컴파일러는 해당 값을 사용하기 전에 특정 처리하는 것을 요구한다.
+    - Option<T>을 사용하기 전에 해당 값이 None 일 때의 처리를 해야 함으로써, 안전한 프로그램을 만들 수 있다.
+- Option<T>가 아닌 값은, null 아닌 값이 아닌 것을 보장한다.
+- Option<T>에 대한 처리(enum도 마찬가지)는 다음에 배울 `match` 표현식으로 깔끔하게 처리 할 수 있다.
