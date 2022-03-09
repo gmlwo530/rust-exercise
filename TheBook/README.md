@@ -1039,3 +1039,113 @@ enum Option<T> {
     - Option<T>을 사용하기 전에 해당 값이 None 일 때의 처리를 해야 함으로써, 안전한 프로그램을 만들 수 있다.
 - Option<T>가 아닌 값은, null 아닌 값이 아닌 것을 보장한다.
 - Option<T>에 대한 처리(enum도 마찬가지)는 다음에 배울 `match` 표현식으로 깔끔하게 처리 할 수 있다.
+## The `match` Control Flow Construct
+
+match 문법의 기본 사용법은 아래와 같다
+
+```rust
+enum Coin {
+    Penny,
+    Nickel,
+    Dime,
+    Quarter,
+}
+
+fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+        Coin::Penny => 1, // ,로 구분 되는 각 부분을 arm이라고 한다.
+        Coin::Nickel => 5,
+        Coin::Dime => 10,
+        Coin::Quarter => {
+					println!("Lucky");
+					25
+				},
+    }
+}
+```
+
+match 문법의 또 다른 유용한 특징은 패턴과 일치하는 값의 부분에 바인딩할 수 있다는 것. 열거형 변형에서 값을 추출하는 방법이다.
+
+```rust
+#[derive(Debug)]
+enum UsState {
+    Alabama,
+    Alaska,
+    // --snip--
+}
+
+enum Coin {
+    Penny,
+    Nickel,
+    Dime,
+    Quarter(UsState),
+}
+
+fn value_in_cents(coin: Coin) -> u8 {
+    match coin {
+        Coin::Penny => 1,
+        Coin::Nickel => 5,
+        Coin::Dime => 10,
+        Coin::Quarter(state) => { // state에 UsState::Alaska 값이 바인딩 된다.
+            println!("State quarter from {:?}!", state);
+            25
+        }
+    }
+}
+
+fn main() {
+    value_in_cents(Coin::Quarter(UsState::Alaska));
+}
+```
+
+### Matching with Option<T>
+
+```rust
+fn plus_one(x: Option<i32>) -> Option<i32> {
+	match x {
+		None => None,
+		Some(i) => Some(i + 1)
+	}
+}
+
+let five = Some(5);
+let six = plus_one(five);
+let none = plus_one(None);
+```
+
+match와 enum을 같이 쓰면 모든 가능성을 arm으로 만들어줘야 한다. 아래의 코드는 컴파일 되지 않는다.
+
+```rust
+fn plus_one(x: Option<i32>) -> Option<i32> {
+    match x {
+        Some(i) => Some(i + 1),
+    }
+}
+
+match coin {
+    Coin::Penny => 1,
+    Coin::Nickel => 5,
+}
+```
+
+### 모든 패턴을 커버하는 arm과 _ Placeholder
+
+```rust
+let dice_roll = 9;
+
+match dice_roll {
+    3 => add_fancy_hat(),
+    7 => remove_fancy_hat(),
+    other => move_player(other), // 특정 값을 사용하는 형태
+}
+
+match dice_roll {
+    3 => add_fancy_hat(),
+    7 => remove_fancy_hat(),
+    _ => (), // 특정 값을 사용하지 않는 형태. unit value를 반환(빈 튜플 타입)
+}
+
+fn add_fancy_hat() {}
+fn remove_fancy_hat() {}
+fn move_player(num_spaces: u8) {}
+```
