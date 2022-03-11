@@ -1149,3 +1149,35 @@ fn add_fancy_hat() {}
 fn remove_fancy_hat() {}
 fn move_player(num_spaces: u8) {}
 ```
+
+## Consice Control Flow with `if let`
+
+- match 구문을 사용하는데 하나의 패턴만 사용하고 나머지 패턴은 무시 될 때 사용하면 좋은 문법이다.
+
+```rust
+let config_max = Some(3u8);
+match config_max {
+    Some(max) => println!("The maximum is configured to be {}", max),
+    _ => (),
+}
+
+let mut count = 0;
+match coin {
+    Coin::Quarter(state) => println!("State quarter from {:?}!", state),
+    _ => count += 1,
+}
+
+// 이 코드를 아래와 같이 간략하게 표현 할 수 있다.
+
+let config_max = Some(3u8);
+if let Some(max) = config_max {
+		println!("The maximum is configured to be {}", max);
+}
+
+let mut count = 0;
+if let Coin::Quarter(state) = count {
+		println!("State quarter from {:?}!", state)
+} else {
+		count += 1;
+}
+```
