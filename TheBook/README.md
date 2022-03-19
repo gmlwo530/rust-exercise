@@ -1181,3 +1181,238 @@ if let Coin::Quarter(state) = count {
 		count += 1;
 }
 ```
+
+# [Managing Growing Projects with Packages, Crates, and Modules](https://doc.rust-lang.org/book/ch07-00-managing-growing-projects-with-packages-crates-and-modules.html#managing-growing-projects-with-packages-crates-and-modules)
+
+rust에서는 코드를 조직화 해서 관리 할 수 있는 몇 가지 특징을 가지고 있다.
+
+- **Packages:** A Cargo feature that lets you build, test, and share crates
+- **Crates:** A tree of modules that produces a library or executable
+- **Modules** and **use:** Let you control the organization, scope, and privacy of paths
+- **Paths:** A way of naming an item, such as a struct, function, or module
+
+## Packages and Crates
+
+- crate는 바이너리 또는 라이브러리다. crate root는 Rust 컴파일러가 시작하는 소스 파일이고, crate의 root module이다.
+- package는 함수의 집합을 제공 해주는 여러 개의 crate이다. pacakge는 `Cargo.toml` 파일을 포함하고, `Cargo.toml` 은 crate들을 어떻게 빌드하는지 설명한다.
+- package는 최소 하나의 crate(바이너리든 라이브러리든 상관 없다)를 포함하고 있어야 한다.
+- `src/main.rs`는 패키지 이름과 같은 바이너리 crate의 crate root이고, `src/lib.rs`는 패키지 이름과 같은 라이브러리 crate의 crate root다.
+my-package라는 패키지가 `src/main.rs` 를 가진다면 이 패키지는 my-package라는 바이너리 crate를 가지는 것이 된다.
+만약 이 패키지가 `src/lib.rs` 도 가진다면 이 패키지는 바이너리와 라이브러리 crate 총 2개의 패키지를 가지는 것이 된다.
+- 패키지는 `src/bin` 디렉토리에 파일을 둠으로써 여러 개의 바이너리 crate를 가질 수 있다.
+- crate는 관련 기능들을 범위에서 함께 그룹화 하므로 여러 프로젝트 간에 기능을 쉽게 공유 할 수 있다.
+- crate가 제공하는 함수의 이름과 중복 되는 이름을 가진 함수가 우리의 crate에 있다고 하자. crate의 함수들은 자체 범위에서 네임스페이스가 지정되기 때문에 종속성으로 추가 될 때 컴파일러는 이름이 같아도 무엇을 참조하는지 혼동하지 않는다.
+
+## Defining Modules to Control Scope and Privacy
+
+- module은 crate 내에 함수들을 가독성이 좋고 재사용하기 쉽게 만들어 준다. 그리고 public과 private한 item들을 통제 할 수 있게 해준다.
+    
+    ```rust
+    mod front_of_house {
+        mod hosting {
+            fn add_to_waitlist() {}
+    
+            fn seat_at_table() {}
+        }
+    
+        mod serving {
+            fn take_order() {}
+    
+            fn serve_order() {}
+    
+            fn take_payment() {}
+        }
+    }
+    ```
+    
+- module에는 구조체, enum, 상수, traits 등을 정의 할 수 있다.
+- 모듈을 사용함으로써 서로 관련이 있는 것 끼리 그룹화 할 수 있다. 또한, 프로그래머는 사용하는 코드가 어디에 정의 되어 있는지 빠르게 찾을 수 있고, 새로운 기능을 어디에 위치 시킬지 빠르게 파악 할 수 있다.
+
+## Paths for Referring to an Item in the Module Tree
+
+- module tree에서 item을 참조하기 위해서 path를 사용한다. path는 두 가지 형태가 있다.
+    - 절대 경로: crate root부터 시작되고 crate의 이름이나 `crate` 문자열을 사용한다.
+    - 상대 경로: 현재 모듈로부터 시작한다. `self` , `super`, 그리고 현재 모듈의 식별자를 사용한다.
+    
+    ```rust
+    // Absolute path
+    crate::front_of_house::hosting::add_to_waitlist();
+    
+    // Relative path
+    front_of_house::hosting::add_to_waitlist();
+    ```
+    
+- rust의 모든 것들은 private 상태가 기본이다. `pub` 키워드를 사용해서 public으로 만들 수 있다.
+- `super` 키워드를 사용해서 상대 경로를 나타 낼 수도 있다.
+    
+    ```rust
+    fn serve_order() {}
+    
+    mod back_of_house {
+        fn fix_incorrect_order() {
+            cook_order();
+            super::serve_order();
+        }
+    
+        fn cook_order() {}
+    }
+    ```
+    
+    `super` 는 파일 시스템의 `..` 문법이랑 같다. 위의 예제에서 `super` 는 back_of_house 모듈을 의미하고, 해당 모듈과 server_order 함수는 같은 위치에 존재하므로 호출이 가능하다.
+    
+- struct를 정의할 때 문구 앞에 pub을 붙혀주면 된다. 하지만 필드는 여전히 private이라서 public 하게 만들고 싶은 필드 앞에 pub을 붙히는 것으로 public 필드를 만들 수 있다.
+    
+    ```rust
+    pub struct Breakfast {
+        pub toast: String,
+        seasonal_fruit: String,
+    }
+    ```
+    
+- enum은 문구 앞에 pub을 붙혀주면, 가지고 있는 모든 변수들도 pub이 된다.
+    
+    ```rust
+    pub enum Appetizer {
+        Soup,
+        Salad,
+    }
+    ```
+    
+
+## Bringing Paths into Scope with the `use` Keyword
+
+- 상대, 절대 경로를 쓰면 뎁스가 깊어져서 경로가 길어지는 경우가 있다. 이때 `use` 키워드를 사용하면 편하다.
+- `use` 키워드는 파일 시스템의 심볼링 링크랑 비슷하다.
+    
+    ```rust
+    mod front_of_house {
+        pub mod hosting {
+            pub fn add_to_waitlist() {}
+        }
+    }
+    
+    use crate::front_of_house::hosting; // 이제 hosting은 이 영역에서 유효한 이름이 된다.
+    use self::front_of_house::hosting // 상대 경로도 가능
+    
+    pub fn eat_at_restaurant() {
+        hosting::add_to_waitlist();
+        hosting::add_to_waitlist();
+        hosting::add_to_waitlist();
+    }
+    ```
+    
+- `use`를 사용할 때 함수를 직접 가져오지 않는다. 함수가 정의 된 부모 모듈을 가지고 오는게 관용이다. 왜냐하면 함수를 가져오면 해당 함수를 사용 할 때 함수가 어디에 정의 되어 있는지 명확히 알 수 없기 때문이다.(use 구문을 참조하지 않는 이상)
+    
+    ```rust
+    use crate::front_of_house::hosting; // Good
+    use crate::front_of_house::hosting::add_to_waitlist; // Bad
+    
+    hosting::add_to_waitlist();
+    add_to_waitlist();
+    ```
+    
+- 반대로, struct, enums, 그 외의 것들은 `use` 로 가져올 때 전체 경로를 적는다. 이것은 특별한 이유는 없고 Rust 개발에서의 컨벤션이다.
+    
+    ```rust
+    use std::collections::HashMap;
+    
+    fn main() {
+        let mut map = HashMap::new();
+        map.insert(1, 2);
+    }
+    ```
+    
+    이 컨벤션의 예외가 있는데, 같은 이름의 item을 두 개 이상 같은 영역에 가지고 올 때다. Rust는 이 예외를 허용하지 않기 때문에 부모 모듈까지의 경로만 사용한다.
+    
+    ```rust
+    use std::fmt;
+    use std::io;
+    
+    fn function1() -> fmt::Result {
+        // --snip--
+    }
+    
+    fn function2() -> io::Result<()> {
+        // --snip--
+    }
+    ```
+    
+    `as` 키워드를 사용하면 위의 예외를 해결 할 수 있다.
+    
+    ```rust
+    use std::fmt::Result;
+    use std::io::Result as IoResult;
+    ```
+    
+- pub과 use를 같이 써서 re-exporting을 기술을 구현 할 수 있다.
+    
+    ```rust
+    pub use crate::front_of_house::hosting;
+    ```
+    
+    이렇게 하면 외부 코드에서 `hosting::add_to_waitlist` 로 호출 가능하다.
+    
+    이 기술은 코드의 내부 구조가 코드를 호출하는 프로그래머가 도메인에 대해 생각하는 방식과 다를 때 유용하다. 즉, 라이브러리에서 작업하는 프로그래머와 라이브러리를 호출하는 프로그래머를 위해 라이브러리가 잘 정리 된다.
+    
+- Cargo.toml에 외부 패키지 이름을 정의하면, `use` 키워드로 해당 패키지를 사용 할 수 있다. `std`패키지도 외부 패키지인데, Rust과 같이 제공되므로 Cargo.toml에 명시 할 필요 없다.
+- 같은 crate 또는 모듈에서 가져올 때 use 구문을 아래와 같이 한 구문으로 표현 할 수 있다.
+    
+    ```rust
+    use std::cmp::Ordering;
+    use std::io;
+    
+    use std::{cmp::Ordering, io};
+    
+    use std::io;
+    use std::io::Write;
+    
+    use std::io::{self, Write};
+    ```
+    
+- `*` (glob operator)을 사용하면 해당 패스에 정의 된 모든 public item을 가지고 올 수 있다.
+    
+    ```rust
+    use std::collections::*;
+    ```
+    
+
+## Separating modules into different files
+
+아래와 같이 파일을 쪼개서 모듈화를 할 수 있다.
+
+```rust
+// Before
+
+// src/lib.rs
+mod front_of_house {
+    pub mod hosting {
+        pub fn add_to_waitlist() {}
+    }
+}
+
+use crate::front_of_house::hosting;
+
+pub fn eat_at_restaurant() {
+    hosting::add_to_waitlist();
+    hosting::add_to_waitlist();
+    hosting::add_to_waitlist();
+}
+```
+
+```rust
+// After
+
+// src/lib.rs
+mod front_of_house; **// block말고 세미콜론으로 끝내면 Rust는 같은 이름의 파일 또는 디렉토리를 찾는다.**
+
+pub use crate::front_of_house::hosting;
+
+pub fn eat_at_restaurant() {
+    hosting::add_to_waitlist();
+    hosting::add_to_waitlist();
+    hosting::add_to_waitlist();
+}
+
+// src/front_of_house/hosting.rs
+pub fn add_to_waitlist() {}
+```
