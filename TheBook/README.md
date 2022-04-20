@@ -1416,3 +1416,153 @@ pub fn eat_at_restaurant() {
 // src/front_of_house/hosting.rs
 pub fn add_to_waitlist() {}
 ```
+
+# Common Collections
+
+## Storing Lists of Values with Vectors
+
+- 벡터를 사용하면 메모리에서 모든 값을 서로 옆에 두는 단일 데이터 구조에 둘 이상의 값을 저장 할 수 있다.
+- 초기화 할 때는 어떤 값이 들어갈지 모르기 때문에 Rust는 어떤 데이터를 저장 할 줄 모른다. 그러므로 type annotation을 해줘야한다.
+    
+    ```rust
+    let v: Vec<i32> = Vec::new();
+    ```
+    
+- 특정 값을 넣어서 초기화 하면 type annotation이 필요 없이, `vec!` 매크로를 사용하면 된다.
+아래 예제의 vector 타입은 자동으로 `Vec<i32>`이 된다.(rust의 기본 정수형 타입 `i32` 이다.)
+    
+    ```rust
+    let v = vec![1, 2, 3];
+    ```
+    
+- Vector에 값을 넣기 위해서 `mut` 키워드를 붙혀준다.
+    
+    ```rust
+    let mut v = Vec::new();
+    
+    v.push(5);
+    v.push(6);
+    v.push(7);
+    v.push(8);
+    ```
+    
+    Rust는 데이터를 통해 타입을 추론 할 수 있어서, `Vec<i32>` 어노테이션은 필요 없다.
+    
+- struct와 마찬가지로, vector도 범위를 벗어나면 메모리가 해제 된다.
+    
+    ```rust
+    {
+        let v = vec![1, 2, 3, 4];
+    
+        // do stuff with v
+    } // <- v goes out of scope and is freed here
+    ```
+    
+
+## **Storing UTF-8 Encoded Text with Strings**
+
+- String이란 byte로 이루어진 collection이다. 그렇기 때문에 String에는 몇 가지의 메소드가 제공 된다.
+- String은 다른 컬렉션과 다른 포인트가 있어서 인덱싱이 복잡하다.
+- Rust core language에서 String 타입은 string slice `str` 밖에 없다. 이것은 `&str` borrowed 형태다
+- Rust의 standard library 에서는 `String` 타입을 제공한다.
+- 러스트에서 문자열을 의미하는 것은 `String` 또는 `&str` 이다. 이 두 개는 UTF-8 인코딩으로 되어 있다.
+- String의 초기화는 Vector와 같이 `new` 함수를 사용한다.
+    
+    ```rust
+    let mut s = String::new();
+    ```
+    
+- String literal을 통해 초기화 할 수도 있다.
+    
+    ```rust
+    let data = "initial contents";
+    
+    let s = data.to_string();
+    
+    let s = "initial contents".to_string();
+    
+    let s = String::from("initial contents");
+    
+    let hello = String::from("안녕하세요"); // UTF-8 인코딩 되므로 한글도 가능하다~
+    ```
+    
+- string을 수정하는 방법은 아래와 같다.
+    
+    ```rust
+    let mut s = String::from("foo");
+    s.push_str("bar"); // foobar가 된다.
+    
+    // push_str 메서드는 string slice(&str)을 인자로 받기 때문에 ownership을 가져가지 않는다.
+    // 그래서 아래와 같이 s2를 메서드에 넘긴 뒤에도 사용 할 수 있다.
+    let mut s1 = String::from("foo");
+    let s2 = "bar";
+    s1.push_str(s2);
+    println!("s2 is {}", s2);
+    
+    // 문자를 추가 할 때는 push 메서드를 사용한다.
+    let mut s = String::from("lo");
+    s.push('l');
+    ```
+    
+- String을 합치는 방법은 아래와 같다
+    
+    ```rust
+    let s1 = String::from("Hello, ");
+    let s2 = String::from("World!");
+    let s3 = s1 + &s2;
+    ```
+    
+    여기서 `s1`은 ownership이 이동 되서 더 이상 사용 불가하고, `&s2`는 왜 레퍼런스 형태로 사용 되어야 하는지 알아보자.
+    
+    Standard library를 보면 알 수 있다. String의 + 연산자는 generic으로 구현(나중에 다룬다) 되어 있다. 
+    
+    ```rust
+    fn add(self, s: &str) -> String {
+    ```
+    
+    self는 &로 정의 되지 않았기 때문에 `s1`의 ownership이 이동하게 되고, 두 번째 인자로 reference를 받고 있기 대문에 `&s2`로 사용 된다.
+    
+    이때 의문점은 `&s2`는 `&str`이 아니고 `&String`인데 어떻게 컴파일이 될까?
+    
+    이유는 컴파일러가 `&String` 인자를 `&str`로 강제 변환하기 때문이다. add 메서드가 호출 될 때, 러스트는 역참조 강제 변환(defer coercion)을 사용하고 `&s2`에서 `&s2[..]`로 전환한다. 이 강제 역참조는 뒤에서 자세히 다룬다.
+    
+    이러한 이유로 `s3`를 할당하는 것은 복사를 하는 것처럼 보이겠지만, 실제로는 `s1`의 ownership이 넘어가고 `s2`의 복사본이 추가 되는 형태이다.
+    
+- 여러 문자열을 합치기 위해서는 + 연산자를 여러 번 사용하거나 format! 매크로를 사용하면 된다.
+    
+    ```rust
+    let s1 = String::from("tic");
+    let s2 = String::from("tac");
+    let s3 = String::from("toe");
+    
+    let s = s1 + "-" + &s2 + "-" + &s3;
+    let s = format!("{}-{}-{}", s1, s2, s3); // 이 매크로는 ownership을 가져가지 않는다.
+    ```
+    
+- **Rust의 String은 인덱싱을 지원하지 않는다.**
+- Rust가 인덱싱을 지원하지 않는 이유는 다음과 같다.
+    - `String` 은 `Vec<u8>` 로 감싸져 있다. 그래서 `let hello = String::from("Hola")` 와 같이 문자열을 저장하면 vector에 4 바이트의 길이로, 1 바이트 짜리 문자들이 저장 된 것과 같다.
+    - 하지만 `Здравствуйте` 같은 문자는 UTF-8 인코딩에서 문자 당 2바이트의 크기를 가진다.
+    - 그렇기 때문에 인덱스 표현이 유니코드 스칼라 표현값과 항상 일치하지 않다.
+        - 예를 들어, 4글자 처럼 보이지만 vector에 저장 된 유니코드의 스칼라는 `[224, 164, 168, 224, 164, 174, 224, 164]` 같을 수 있다.
+    - 이 외에도 자소 분리와 같은 문제로 인덱싱을 지원하지 않기도 하고, O(1) 시간 복잡도를 가지기 위해서 지원하지 않는다.
+- 그래서 String을 인덱싱 한 것처럼 가지고 올려면 문자의 바이트 사이즈만 큼 슬라이싱 해야 한다.
+    
+    ```rust
+    let hello = "Здравствуйте";
+    let s = &hello[0..4]; // Зд
+    ```
+    
+    만약 `&hello[0..1]` 과 같이 1바이트만 슬라이싱 하면 컴파일 과정에서 panic이 발생한다.
+    
+- String을 iterator 하는 방법은 메서드를 쓰는 것이다.
+    
+    ```rust
+    for c in "Здравствуйте".chars() {
+    		println!("{}", c);
+    }
+    
+    for b in "Здравствуйте".bytes() {
+    		println!("{}", b);
+    }
+    ```
