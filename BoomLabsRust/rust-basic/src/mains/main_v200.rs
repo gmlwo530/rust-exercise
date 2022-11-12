@@ -1,3 +1,17 @@
+/*
+    trait는 다른 언어의 인터페이스라고 부르는 기능들과 유사하지만 약간 차이가 있음
+
+    Rust가 다형성을 제공하는 방법은 2가지 -> 정적 디스패치(static dispatch)와 동적 디스패치(dynamic dispatch)
+
+    - 정적 디스패치는 "컴파일 타임"에 어느 함수에 호출이 바인딩 되는지 결정
+    - 동적 디스패치는 "런타임"에 어느 함수에 호출이 바인딩 되는지 결정
+
+    정적 디스패치를 사용하면 컴파일 시 모든 코드들을 생성하고 컴파일 하게 되므로 컴파일 시간이 길어지고, 바이너리의 크기가 커짐
+    그리고, CPU 명령어 캐시 최적화에도 방해가 됨(?)
+
+    동적 디스패치
+*/
+
 #[derive(Clone)]
 struct Product {
     name: String,
@@ -12,6 +26,8 @@ struct Employee {
     id: u64,
 }
 
+// Java의 interface와 유사함
+// 공유 메서드
 trait PrintInfo {
     fn print_info(&self);
 }
@@ -85,6 +101,8 @@ fn static_print(data: impl PrintInfo) {
 }
 
 // 런타임에 어떤 데이터가 들어오는 알 수 있음
+// dyn을 사용하여 dynamic dispatch임을 알려주고 Box<T>를 사용해서 컴파일러가
+// 메모리의 크기가 불확정하다고 판단하지 않게 하기 위해 힙 메모리에 넣어줌
 fn dynamic_print(data: Box<dyn PrintInfo>) {
     data.print_info();
 }
